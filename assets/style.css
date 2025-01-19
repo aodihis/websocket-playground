@@ -109,8 +109,8 @@ input::placeholder {
 }
 
 .button.danger:hover {
-    background-color: #E7D283;
-    border-color: #E7D283;
+    background-color: #DF9755;
+    border-color: #DF9755;
     color: #EDF4C2;
 }
 
