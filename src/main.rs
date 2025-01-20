@@ -1,4 +1,8 @@
+mod components;
+
 use yew::prelude::*;
+use crate::components::input::{MessageInput, UrlInput};
+use crate::components::output::{OutputDetail, OutputSummary};
 
 #[function_component]
 fn App() -> Html {
@@ -9,22 +13,12 @@ fn App() -> Html {
             </div>
             <div class="body">
                 <div class="input">
-                    <div class="url-input-container">
-                        <input type="text" id="url" placeholder="ws://websocket.url"/>
-                        <button class="button hidden primary" type="submit">{"Connect"}</button>
-                        <button class="button danger" type="submit">{"Disconnect"}</button>
-                    </div>
-                    <div class="message">
-                        <div class="message-header">
-                            <label for="message">{"Message"}</label>
-                            <button class="button danger">{"Send"}</button>
-                        </div>
-                        <textarea type="text" id="message" />
-                    </div>
+                    <UrlInput/>
+                    <MessageInput/>
                 </div>
                 <div class="output">
-                    <div class="data-sum"></div>
-                    <div class="data-detail"></div>
+                    <OutputSummary/>
+                    <OutputDetail/>
                 </div>
             </div>
         </>
