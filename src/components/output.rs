@@ -1,7 +1,26 @@
-use yew::{function_component, html, Html};
+use yew::{function_component, html, use_state, use_state_eq, Callback, Html, Properties};
+use yew::virtual_dom::ListenerKind::onclick;
+use crate::{Event, EventKind};
 
+#[derive(Properties, PartialEq, Clone)]
+pub struct OutputSummaryProps {
+    pub events: Vec<Event>,
+    pub on_click: Callback<usize>,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct OutputDetailProps {
+    pub data: String,
+}
 #[function_component]
-pub fn OutputSummary() -> Html {
+pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
+    let OutputSummaryProps {events, on_click} = props;
+    let kind = use_state(|| EventKind::System);
+
+    let onclick = |index: usize| {Callback::from({
+        let on_click = on_click.clone();
+        on_click.emit(index);
+    })};
     let data = vec!["Hello", "world", "{josn sexamdpaddh fohsdfhsdlfhds;kS"];
     html! {
         <>
@@ -15,10 +34,10 @@ pub fn OutputSummary() -> Html {
             </div>
             <div class="data-sum">
             {
-                data.iter().map(|d| html! {
-                <div class="data-summary-info">
-                    {*d}
-                </div>
+                events.iter().enumerate().map(|(index, event)| html! {
+                    <div class="data-summary-info" onclick={on_click(index)}>
+                        { &event.message }
+                    </div>
                 }).collect::<Html>()
             }
             </div>
@@ -27,8 +46,12 @@ pub fn OutputSummary() -> Html {
 }
 
 #[function_component]
-pub fn OutputDetail() -> Html {
+pub fn OutputDetail(props: &OutputDetailProps) -> Html {
+    let OutputDetailProps { data } = props;
+
     html! {
-        <div class="data-detail"></div>
+        <div class="data-detail">
+            {data}
+        </div>
     }
 }

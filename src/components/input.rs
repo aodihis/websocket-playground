@@ -1,27 +1,67 @@
-use yew::{function_component, html, Html};
+use web_sys::HtmlTextAreaElement;
+use yew::{function_component, html, use_ref, Callback, Html, NodeRef, Properties};
+use crate::components::input::_MessageInputProps::send_click;
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct UrlInputProps {
+     pub(crate) is_connected: bool,
+     pub(crate) connect_click: Callback<()>,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct MessageInputProps {
+     pub(crate) is_connected: bool,
+     pub(crate) send_click: Callback<(String)>,
+}
+
 
 #[function_component]
-pub fn UrlInput() -> Html {
+pub fn UrlInput(props: &UrlInputProps) -> Html {
+    // let UrlInputProps {is_connected, on_click} = props;
+    let is_connected = props.is_connected;
+    let on_click = props.connect_click.clone();
+    let onclick = Callback::from(move |_| {
+        on_click.emit(());
+    });
     html! {
         <>
             <div class="url-input-container">
                 <input type="text" id="url" placeholder="ws://websocket.url"/>
-                <button class="button hidden primary" type="submit">{"Connect"}</button>
-                <button class="button danger" type="submit">{"Disconnect"}</button>
+                {
+                    if is_connected != true {
+                        html! {<button class="button primary" type="submit" onclick={onclick}>{"Connect"}</button>}
+                    }
+                    else {
+                        html! {<button class="button danger" type="submit" onclick={onclick}>{"Disconnect"}</button>}
+                    }
+                }
             </div>
         </>
     }
 }
 
 #[function_component]
-pub fn MessageInput() -> Html {
+pub fn MessageInput(props: &MessageInputProps) -> Html {
+    let MessageInputProps { is_connected, send_click } = props;
+
+    let msg_ref = NodeRef::default();
+    let onclick = Callback::from(move |_| {
+        let msg = msg_ref.cast::<HtmlTextAreaElement>().unwrap().value();
+        send_click(msg.clone());
+    });
     html! {
         <div class="message">
             <div class="message-header">
                 <label for="message">{"Message"}</label>
-                <button class="button danger">{"Send"}</button>
+                {
+                    if *is_connected {
+                        html! {<button class="button danger" onclick={onclick}>{"Send"}</button>}
+                    } else {
+                        html! {}
+                     }
+                }
             </div>
-            <textarea type="text" id="message" />
+            <textarea type="text" id="message" ref={msg_ref}/>
         </div>
     }
 }
