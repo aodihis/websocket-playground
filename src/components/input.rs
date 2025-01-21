@@ -1,6 +1,5 @@
 use web_sys::HtmlTextAreaElement;
-use yew::{function_component, html, use_ref, Callback, Html, NodeRef, Properties};
-use crate::components::input::_MessageInputProps::send_click;
+use yew::{function_component, html, Callback, Html, NodeRef, Properties};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct UrlInputProps {
@@ -10,8 +9,8 @@ pub struct UrlInputProps {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct MessageInputProps {
-     pub(crate) is_connected: bool,
-     pub(crate) send_click: Callback<(String)>,
+     pub is_connected: bool,
+     pub send_click: Callback<String>,
 }
 
 
@@ -45,10 +44,14 @@ pub fn MessageInput(props: &MessageInputProps) -> Html {
     let MessageInputProps { is_connected, send_click } = props;
 
     let msg_ref = NodeRef::default();
-    let onclick = Callback::from(move |_| {
-        let msg = msg_ref.cast::<HtmlTextAreaElement>().unwrap().value();
-        send_click(msg.clone());
-    });
+    let onclick = {
+        let send_click = send_click.clone();
+        let msg_ref = msg_ref.clone();
+        Callback::from(move |_| {
+            let msg = msg_ref.cast::<HtmlTextAreaElement>().unwrap().value();
+            send_click.emit(msg.clone());
+        })
+    };
     html! {
         <div class="message">
             <div class="message-header">

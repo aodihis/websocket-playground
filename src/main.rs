@@ -1,5 +1,6 @@
 mod components;
 
+use std::slice::SliceIndex;
 use yew::prelude::*;
 use crate::components::input::{MessageInput, UrlInput};
 use crate::components::output::{OutputDetail, OutputSummary};
@@ -11,7 +12,7 @@ pub enum EventKind {
     Receive
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Event {
     pub message: String,
     pub kind: EventKind,
@@ -37,12 +38,18 @@ fn App() -> Html {
     ];
 
     let is_connected: UseStateHandle<bool> = use_state(|| false);
-    let events:UseStateHandle<Vec<Event>> = use_state(Vec::<Event>::new);
-    let event_to_show: UseStateHandle<usize> = use_state(|| 0);
+    let events:UseStateHandle<Vec<Event>> = use_state(|| dummy_messages);
+    let event_to_show: UseStateHandle<Option<usize>> = use_state(|| Option::<usize>::None.into());
 
-    events.set(dummy_messages);
+    // events.set(dummy_messages);
 
-    let event_detail_show = (*events)[*event_to_show].message.clone();
+    let event_detail_show = match *event_to_show {
+        None => "".to_string(),
+        Some(index) => match events.get(index) {
+            None => "".to_string(),
+            Some(event) => event.message.clone(),
+        },
+    };
 
     let connect_click : Callback<()> = {
         let is_connected = is_connected.clone();
@@ -51,12 +58,12 @@ fn App() -> Html {
         })
     };
 
-    let send_click : Callback<(String)> = Callback::from(move |payload: String| {
-            let payload = payload.as_str();
+    let send_click : Callback<String> = Callback::from(move |payload: String| {
+            let _payload = payload.as_str();
     });
 
     let sum_click: Callback<usize> = Callback::from(move |index| {
-        event_to_show.set(index);
+        event_to_show.set(Some(index));
     });
 
     html! {
