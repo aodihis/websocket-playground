@@ -34,7 +34,7 @@ pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
             </div>
             <div class="data-sum">
             {
-                events.iter().enumerate().filter(|(index, event)| event.kind == *kind )
+                events.iter().enumerate().filter(|(_, event)| event.kind == *kind )
                 .map(|(index, event) : (usize, &Event)| {
                     html! {
                         <div class="data-summary-info" onclick={onclick(index)}>

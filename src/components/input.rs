@@ -1,4 +1,3 @@
-use web_sys::wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yew::{function_component, html, Callback, Html, NodeRef, Properties};
 
