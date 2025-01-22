@@ -1,5 +1,5 @@
 use crate::{Event, EventKind};
-use yew::{function_component, html, use_state, Callback, Html, Properties};
+use yew::{function_component, html, use_state, Callback, Html, Properties, UseStateHandle};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct OutputSummaryProps {
@@ -14,7 +14,7 @@ pub struct OutputDetailProps {
 #[function_component]
 pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
     let OutputSummaryProps {events, on_click} = props;
-    let kind = use_state(|| EventKind::System);
+    let kind: UseStateHandle<EventKind> = use_state(|| EventKind::System);
 
     let onclick = |index: usize| {
         let on_click = on_click.clone();
@@ -34,11 +34,14 @@ pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
             </div>
             <div class="data-sum">
             {
-                events.iter().enumerate().map(|(index, event)| html! {
-                    <div class="data-summary-info" onclick={onclick(index)}>
-                        { &event.message }
-                    </div>
-                }).collect::<Html>()
+                events.iter().enumerate().filter(|(index, event)| event.kind == *kind )
+                .map(|(index, event) : (usize, &Event)| {
+                    html! {
+                        <div class="data-summary-info" onclick={onclick(index)}>
+                            { &event.message }
+                        </div>
+                    }
+            }).collect::<Html>()
             }
             </div>
         </>
