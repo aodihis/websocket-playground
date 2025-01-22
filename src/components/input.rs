@@ -1,10 +1,12 @@
-use web_sys::HtmlTextAreaElement;
+use web_sys::wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 use yew::{function_component, html, Callback, Html, NodeRef, Properties};
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct UrlInputProps {
-     pub(crate) is_connected: bool,
-     pub(crate) connect_click: Callback<()>,
+     pub is_connected: bool,
+     pub connect_click: Callback<String>,
+     pub disconnect_click: Callback<()>,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -16,22 +18,34 @@ pub struct MessageInputProps {
 
 #[function_component]
 pub fn UrlInput(props: &UrlInputProps) -> Html {
+    let input_ref = NodeRef::default();
     // let UrlInputProps {is_connected, on_click} = props;
     let is_connected = props.is_connected;
     let on_click = props.connect_click.clone();
-    let onclick = Callback::from(move |_| {
-        on_click.emit(());
-    });
+    let disconnect_click = props.disconnect_click.clone();
+    let onconnect = {
+        let input_ref = input_ref.clone();
+        Callback::from(move |_| {
+            let url = input_ref.cast::<HtmlInputElement>().unwrap().value();
+            on_click.emit(url);
+        })
+    };
+
+    let disconnected = {
+        Callback::from(move |_| {
+            disconnect_click.emit(());
+        })
+    };
     html! {
         <>
             <div class="url-input-container">
-                <input type="text" id="url" placeholder="ws://websocket.url"/>
+                <input type="text" id="url" placeholder="ws://websocket.url" ref={input_ref}/>
                 {
                     if is_connected != true {
-                        html! {<button class="button primary" type="submit" onclick={onclick}>{"Connect"}</button>}
+                        html! {<button class="button primary" type="submit" onclick={onconnect}>{"Connect"}</button>}
                     }
                     else {
-                        html! {<button class="button danger" type="submit" onclick={onclick}>{"Disconnect"}</button>}
+                        html! {<button class="button danger" type="submit" onclick={disconnected}>{"Disconnect"}</button>}
                     }
                 }
             </div>
@@ -49,7 +63,7 @@ pub fn MessageInput(props: &MessageInputProps) -> Html {
         let msg_ref = msg_ref.clone();
         Callback::from(move |_| {
             let msg = msg_ref.cast::<HtmlTextAreaElement>().unwrap().value();
-            send_click.emit(msg.clone());
+            send_click.emit(msg);
         })
     };
     html! {
