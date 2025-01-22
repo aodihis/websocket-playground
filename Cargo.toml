@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 # this is the development version of Yew
 yew = { git = "https://github.com/yewstack/yew/", features = ["csr"] }
-web-sys = "0.3.77"
+web-sys = { version = "0.3.77", features = ["HtmlSelectElement"]}
 gloo-net = { version = "0.6.0", features = ["websocket"] }
 futures-util = "0.3.31"
 log = "0.4.25"

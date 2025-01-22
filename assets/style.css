@@ -223,8 +223,11 @@ select option {
 .data-summary-info {
     border-bottom: 1px solid #4C585B;
     padding-left: 5px;
+    padding-right: 5px;
     cursor: pointer;
-
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .data-summary-info:hover {
@@ -246,4 +249,5 @@ select option {
     height: 59%;
     overflow: visible;
     overflow-y: scroll;
+    padding: 0.3rem;
 }
