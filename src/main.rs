@@ -117,7 +117,7 @@ fn App() -> Html {
                 if *is_connected {
                     if let Some(mut writer) = ws_writer.borrow_mut().take() {
                         // Close the con
-                        if let Err(res) = writer.close().await {
+                        if let Err(_) = writer.close().await {
                             console::log_1(&"unable to disconnect".into());
                         }
                     }
@@ -129,9 +129,28 @@ fn App() -> Html {
 
     let send_click : Callback<String> = {
         let ws_writer = ws_writer.clone();
+        let events = events.clone();
         Callback::from(move |payload: String| {
-            let _payload = payload.as_str();
-    })};
+            let ws_writer = ws_writer.clone();
+            let events = events.clone();
+            spawn_local({
+               async move {
+                   if let Some(writer) = ws_writer.borrow_mut().as_mut() {
+                         if writer.send(Message::Text(payload.clone())).await.is_ok() {
+                            events.set({
+                                let mut new_events = (*events).clone();
+                                new_events.push(Event {
+                                    message: payload,
+                                    kind: EventKind::System,
+                                });
+                                new_events
+                            });
+                         }
+                   }
+               }
+           })
+        }
+    )};
 
     let sum_click: Callback<usize> = Callback::from(move |index| {
         event_to_show.set(Some(index));
