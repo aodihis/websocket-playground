@@ -1,13 +1,12 @@
 mod components;
 
 use std::rc::Rc;
-use crate::components::input::{MessageInput, UrlInput};use crate::components::input::{MessageInput, UrlInput};
+use crate::components::input::{MessageInput, UrlInput};
 use crate::components::output::{OutputDetail, OutputSummary};
 use futures_util::{SinkExt, StreamExt};
 use gloo_net::websocket::futures::WebSocket;
 use gloo_net::websocket::Message;
 use web_sys::{console, window};
-use web_sys::wasm_bindgen::JsValue;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
@@ -56,7 +55,7 @@ fn App() -> Html {
     };
     let event_detail_show = match *event_to_show {
         None => "".to_string(),
-        Some(index) => match (events_state.events).get(index) {
+        Some(index) => match events_state.events.get(index) {
             None => "".to_string(),
             Some(event) => event.message.clone(),
         },
