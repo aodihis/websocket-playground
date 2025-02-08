@@ -84,7 +84,10 @@ fn App() -> Html {
             *ws_writer.borrow_mut() = Some(writer);
 
             let events_update = events_update.clone();
+            let is_connected = is_connected.clone();
+
             spawn_local({
+                let ws_writer = ws_writer.clone();
                 async move {
                     while let Some(msg) = read.next().await {
                         match msg {
@@ -106,6 +109,13 @@ fn App() -> Html {
                             }
                             Err(e) => {
                                 console::error_1(&format!("WebSocket error: {:?}", e).into());
+                                is_connected.set(false);
+                                *ws_writer.borrow_mut() = None;
+                                if let Some(window) = window() {
+                                    window
+                                        .alert_with_message("Connection error!")
+                                        .unwrap();
+                                }
                                 break;
                             }
                         };
@@ -123,9 +133,12 @@ fn App() -> Html {
             let ws_writer = ws_writer.clone();
             spawn_local(async move {
                 let mut binding = ws_writer.borrow_mut();
-                let writer = binding.as_mut().unwrap();
-                writer.close().await.unwrap();
-                *ws_writer.borrow_mut() = None;
+                {
+                    let writer = binding.as_mut().unwrap();
+                    writer.close().await.unwrap();
+                }
+                *binding = None;
+                // *ws_writer.borrow_mut() = None;
                 is_connected.set(false);
             });
         })
