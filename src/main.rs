@@ -4,6 +4,7 @@ use std::rc::Rc;
 use crate::components::input::{MessageInput, UrlInput};
 use crate::components::output::{OutputDetail, OutputSummary};
 use futures_util::{SinkExt, StreamExt};
+use futures_util::future::{AbortHandle, Abortable};
 use gloo_net::websocket::futures::WebSocket;
 use gloo_net::websocket::Message;
 use web_sys::{console, window};
@@ -46,6 +47,8 @@ fn App() -> Html {
     let event_to_show: UseStateHandle<Option<usize>> = use_state(|| Option::<usize>::None.into());
     // let ws_writer:Rc<RefCell<Option<SplitSink<WebSocket,Message>>>> = Rc::new(RefCell::new(None));
     let ws_writer = use_mut_ref(|| None);
+    let abort_handle = use_mut_ref(|| None);
+
 
     let events_update = {
         let events = events_state.clone();
@@ -65,6 +68,8 @@ fn App() -> Html {
         let is_connected = is_connected.clone();
         let events_update = events_update.clone();
         let ws_writer = ws_writer.clone();
+        let abort_handle = abort_handle.clone();
+
         Callback::from(move |url: String| {
             is_connected.set(true);
             let socket = match WebSocket::open(&*url) {
@@ -85,8 +90,11 @@ fn App() -> Html {
 
             let events_update = events_update.clone();
             let is_connected = is_connected.clone();
+            let (abort_handle_inner, abort_registration) = AbortHandle::new_pair();
+            *abort_handle.borrow_mut() = Some(abort_handle_inner.clone());
 
-            spawn_local({
+
+            let task = {
                 let ws_writer = ws_writer.clone();
                 async move {
                     while let Some(msg) = read.next().await {
@@ -121,6 +129,11 @@ fn App() -> Html {
                         };
                     }
                 }
+            };
+
+            let abort_task = Abortable::new(task, abort_registration);
+            spawn_local(async move {
+                let _ = abort_task.await;
             });
         })
     };
@@ -128,9 +141,11 @@ fn App() -> Html {
     let disconnect_click: Callback<()> = {
         let ws_writer = ws_writer.clone();
         let is_connected = is_connected.clone();
+        let abort_handle = abort_handle.clone();
         Callback::from(move |_| {
             let is_connected = is_connected.clone();
             let ws_writer = ws_writer.clone();
+            let abort_handle = abort_handle.clone();
             spawn_local(async move {
                 let mut binding = ws_writer.borrow_mut();
                 {
@@ -138,6 +153,10 @@ fn App() -> Html {
                     writer.close().await.unwrap();
                 }
                 *binding = None;
+                if let Some(handle) = abort_handle.borrow_mut().take() {
+                    handle.abort(); // Abort the WebSocket listener
+                }
+
                 // *ws_writer.borrow_mut() = None;
                 is_connected.set(false);
             });
