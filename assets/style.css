@@ -115,12 +115,7 @@ select option {
     color: #333;
 }
 
-@media (max-width: 600px) {
-    select {
-        font-size: 0.9rem;
-        padding: 8px;
-    }
-}
+
 
 .hidden {
     display: none;
@@ -397,4 +392,67 @@ select option {
     padding: 0.5rem;
     margin: 0;
     word-break: break-all;
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 0 1rem;
+    }
+
+    .header-subtitle {
+        display: none;
+    }
+
+    .body {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0.75rem auto;
+        gap: 0.75rem;
+    }
+
+    .input, .output {
+        overflow: visible;
+        min-height: 0;
+    }
+
+    .input {
+        min-height: 50vh;
+    }
+
+    .output {
+        min-height: 60vh;
+    }
+
+    .data-sum {
+        height: 45%;
+        flex-shrink: 0;
+    }
+
+    .url-input-container {
+        flex-wrap: wrap;
+    }
+
+    .url-input-container button {
+        width: 100%;
+        min-width: unset;
+    }
+
+    button, .button {
+        min-height: 44px;
+        padding: 0.65rem 1rem;
+    }
+
+    .message-toolbar {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    select {
+        font-size: 0.9rem;
+        padding: 8px;
+        min-height: 38px;
+    }
 }
