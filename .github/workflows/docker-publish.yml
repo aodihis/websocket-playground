@@ -37,12 +37,15 @@ jobs:
   deploy:
     needs: build-push
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     steps:
       - uses: actions/checkout@v4
 
       - name: Deploy to VPS
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/deploy_key
@@ -53,4 +56,5 @@ jobs:
           scp -i ~/.ssh/deploy_key docker-compose.vps.yml \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/apps/websocket-playground/docker-compose.yml
           ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "cd /opt/apps/websocket-playground && docker compose pull && docker compose up -d"
+            "echo '$GHCR_TOKEN' | docker login ghcr.io -u ${{ github.actor }} --password-stdin && \
+             cd /opt/apps/websocket-playground && docker compose pull && docker compose up -d"
