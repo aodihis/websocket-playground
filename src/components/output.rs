@@ -13,6 +13,7 @@ pub struct OutputSummaryProps {
 pub struct OutputDetailProps {
     pub data: String,
 }
+
 #[function_component]
 pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
     let OutputSummaryProps {events, on_click} = props;
@@ -32,24 +33,19 @@ pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
 
             if let Some(val) = val {
                 match val.value().as_str() {
-                    "received" => {
-                        kind.set(EventKind::Receive);
-                    },
-                    "sent" => {
-                        kind.set(EventKind::Send);
-                    },
-                    _ => {
-                        kind.set(EventKind::All);
-                    }
+                    "received" => kind.set(EventKind::Receive),
+                    "sent" => kind.set(EventKind::Send),
+                    _ => kind.set(EventKind::All),
                 };
                 console::log_1(&(val.value()).into());
             }
         })
     };
+
     html! {
         <>
             <div class="data-sum-header">
-                <h4>{"Event Logs:"}</h4>
+                <h4>{"Event Logs"}</h4>
                 <select name="event_type" id="event_type" onchange={onchange}>
                   <option value="all" selected={true}>{"All"}</option>
                   <option value="sent">{"Sent"}</option>
@@ -58,17 +54,21 @@ pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
             </div>
             <div class="data-sum">
             {
-                events.iter().enumerate().filter(|(_, event)| (event.kind == *kind) || (*kind == EventKind::All) )
-                .map(|(index, event) : (usize, &Event)| {
+                events.iter().enumerate().filter(|(_, event)| (event.kind == *kind) || (*kind == EventKind::All))
+                .map(|(index, event): (usize, &Event)| {
+                    let preview: String = if event.message.chars().count() > 60 {
+                        format!("{}…", event.message.chars().take(60).collect::<String>())
+                    } else {
+                        event.message.clone()
+                    };
                     html! {
                         <div class="data-summary-info" onclick={onclick(index)}>
-                            <div>{ &event.message }</div>
+                            <div class="data-summary-message">{ preview }</div>
                             <div>{ match &event.kind {
-                                EventKind::Send => {html!("Send")},
-                                EventKind::Receive => {html!("Receive")},
-                                _ => {html!()}
-                            }}
-                            </div>
+                                EventKind::Send => html! { <span class="badge send">{"Sent"}</span> },
+                                EventKind::Receive => html! { <span class="badge receive">{"Recv"}</span> },
+                                _ => html! {}
+                            }}</div>
                         </div>
                     }
             }).collect::<Html>()
@@ -82,9 +82,23 @@ pub fn OutputSummary(props: &OutputSummaryProps) -> Html {
 pub fn OutputDetail(props: &OutputDetailProps) -> Html {
     let OutputDetailProps { data } = props;
 
+    let content = if data.trim().is_empty() {
+        html! { <span class="data-detail-placeholder">{"Select an event to view details"}</span> }
+    } else {
+        match serde_json::from_str::<serde_json::Value>(data) {
+            Ok(parsed) => {
+                let formatted = serde_json::to_string_pretty(&parsed).unwrap_or_else(|_| data.clone());
+                html! { <pre class="json-output">{ formatted }</pre> }
+            }
+            Err(_) => {
+                html! { <pre class="raw-output">{ data }</pre> }
+            }
+        }
+    };
+
     html! {
         <div class="data-detail">
-            {data}
+            { content }
         </div>
     }
 }
