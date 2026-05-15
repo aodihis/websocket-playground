@@ -1,0 +1,22 @@
+services:
+  websocket-playground:
+    image: ghcr.io/aodihis/websocket-playground:${TAG:-latest}
+    restart: unless-stopped
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      # HTTPS
+      - "traefik.http.routers.ws-playground.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.ws-playground.entrypoints=websecure"
+      - "traefik.http.routers.ws-playground.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ws-playground.loadbalancer.server.port=80"
+      # HTTP → HTTPS redirect
+      - "traefik.http.routers.ws-playground-http.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.ws-playground-http.entrypoints=web"
+      - "traefik.http.routers.ws-playground-http.middlewares=ws-playground-https"
+      - "traefik.http.middlewares.ws-playground-https.redirectscheme.scheme=https"
+
+networks:
+  traefik:
+    external: true  # change this name to match your Traefik network
