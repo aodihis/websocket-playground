@@ -25,8 +25,12 @@ pub fn UrlInput(props: &UrlInputProps) -> Html {
     let onconnect = {
         let input_ref = input_ref.clone();
         Callback::from(move |_| {
-            let url = input_ref.cast::<HtmlInputElement>().unwrap().value();
-            on_click.emit(url);
+            if let Some(el) = input_ref.cast::<HtmlInputElement>() {
+                let url = el.value();
+                if url.starts_with("ws://") || url.starts_with("wss://") {
+                    on_click.emit(url);
+                }
+            }
         })
     };
 
@@ -40,7 +44,7 @@ pub fn UrlInput(props: &UrlInputProps) -> Html {
             <div class="url-input-container">
                 <input type="text" id="url" placeholder="ws://websocket.url" ref={input_ref}/>
                 {
-                    if is_connected != true {
+                    if !is_connected {
                         html! {<button class="button primary" type="submit" onclick={onconnect}>{"Connect"}</button>}
                     }
                     else {
@@ -61,8 +65,12 @@ pub fn MessageInput(props: &MessageInputProps) -> Html {
         let send_click = send_click.clone();
         let msg_ref = msg_ref.clone();
         Callback::from(move |_| {
-            let msg = msg_ref.cast::<HtmlTextAreaElement>().unwrap().value();
-            send_click.emit(msg);
+            if let Some(el) = msg_ref.cast::<HtmlTextAreaElement>() {
+                let msg = el.value();
+                if !msg.is_empty() {
+                    send_click.emit(msg);
+                }
+            }
         })
     };
     html! {

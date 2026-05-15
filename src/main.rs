@@ -44,7 +44,7 @@ fn App() -> Html {
 
     let is_connected: UseStateHandle<bool> = use_state(|| false);
     let events_state: UseReducerHandle<EventsState> = use_reducer(|| EventsState { events: vec![] });
-    let event_to_show: UseStateHandle<Option<usize>> = use_state(|| Option::<usize>::None.into());
+    let event_to_show: UseStateHandle<Option<usize>> = use_state(|| None);
     // let ws_writer:Rc<RefCell<Option<SplitSink<WebSocket,Message>>>> = Rc::new(RefCell::new(None));
     let ws_writer = use_mut_ref(|| None);
     let abort_handle = use_mut_ref(|| None);
@@ -71,19 +71,16 @@ fn App() -> Html {
         let abort_handle = abort_handle.clone();
 
         Callback::from(move |url: String| {
-            is_connected.set(true);
-            let socket = match WebSocket::open(&*url) {
+            let socket = match WebSocket::open(&url) {
                 Ok(ws) => ws,
                 Err(_e) => {
-                    is_connected.set(false);
-                    if let Some(window) = window() {
-                        window
-                            .alert_with_message("Failed to connect to websocket server.")
-                            .unwrap();
+                    if let Some(win) = window() {
+                        let _ = win.alert_with_message("Failed to connect to websocket server.");
                     }
                     return;
                 }
             };
+            is_connected.set(true);
 
             let (writer, mut read) = socket.split();
             *ws_writer.borrow_mut() = Some(writer);
@@ -106,11 +103,6 @@ fn App() -> Html {
                                     message: text,
                                     kind: EventKind::Receive,
                                 });
-                                // events.set({
-                                //     let mut new_events = (*events).clone();
-                                //
-                                //     new_events
-                                // });
                             }
                             Ok(Message::Bytes(_)) => {
                                 console::log_1(&"Hand".into());
@@ -119,10 +111,8 @@ fn App() -> Html {
                                 console::error_1(&format!("WebSocket error: {:?}", e).into());
                                 is_connected.set(false);
                                 *ws_writer.borrow_mut() = None;
-                                if let Some(window) = window() {
-                                    window
-                                        .alert_with_message("Connection error!")
-                                        .unwrap();
+                                if let Some(win) = window() {
+                                    let _ = win.alert_with_message("Connection error!");
                                 }
                                 break;
                             }
@@ -147,17 +137,13 @@ fn App() -> Html {
             let ws_writer = ws_writer.clone();
             let abort_handle = abort_handle.clone();
             spawn_local(async move {
-                let mut binding = ws_writer.borrow_mut();
-                {
-                    let writer = binding.as_mut().unwrap();
-                    writer.close().await.unwrap();
+                let writer = ws_writer.borrow_mut().take();
+                if let Some(mut w) = writer {
+                    let _ = w.close().await;
                 }
-                *binding = None;
                 if let Some(handle) = abort_handle.borrow_mut().take() {
-                    handle.abort(); // Abort the WebSocket listener
+                    handle.abort();
                 }
-
-                // *ws_writer.borrow_mut() = None;
                 is_connected.set(false);
             });
         })
@@ -172,21 +158,15 @@ fn App() -> Html {
             console::log_1(&payload.clone().into());
             spawn_local({
                 async move {
-                    if let Some(writer) = ws_writer.borrow_mut().as_mut() {
-                        if writer.send(Message::Text(payload.clone())).await.is_ok() {
+                    let writer_opt = ws_writer.borrow_mut().take();
+                    if let Some(mut w) = writer_opt {
+                        if w.send(Message::Text(payload.clone())).await.is_ok() {
                             events_update.emit(Event {
                                 message: payload,
                                 kind: EventKind::Send,
                             });
-                            // events.set({
-                            //     let mut new_events = (*events).clone();
-                            //     new_events.push(Event {
-                            //         message: payload,
-                            //         kind: EventKind::Send,
-                            //     });
-                            //     new_events
-                            // });
                         }
+                        *ws_writer.borrow_mut() = Some(w);
                     }
                 }
             })
